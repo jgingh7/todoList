@@ -10,8 +10,11 @@ app.set('view engine', 'ejs'); //enable ejs in express
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(express.static("public")); //fetch files from file public
 
+let address = ""
+
 // List for Today's To-do-List
 app.get("/", function(req, res) {
+  address = req.url;
   let today = new Date();
 
   let options = {
@@ -22,23 +25,20 @@ app.get("/", function(req, res) {
 
   let day = today.toLocaleDateString("en-US", options);
 
-  res.render("list", {listTitle: day, newListItems: items}); // searches views folder and finds list.ejs
+  res.render("list", {listTitle: day, newListItems: items, theAddress: address}); // searches views folder and finds list.ejs
 });
 
 app.post("/", function(req, res){
   let item = req.body.newItem;
-  if (req.body.list === "Work") {
-    workItems.push(item);
-    res.redirect("/work");
-  } else {
-    items.push(item);
-    res.redirect("/");
-  }
+  items.push(item);
+
+  res.redirect("/");
 });
 
 // List for Work To-do-List
 app.get("/work", function(req, res) {
-  res.render("list", {listTitle: "Work List", newListItems: workItems});
+  address = req.url;
+  res.render("list", {listTitle: "Work List", newListItems: workItems, theAddress: address});
 });
 
 app.post("/work", function(req, res){
