@@ -1,10 +1,12 @@
 const express = require('express');
 const bodyParser = require('body-parser');
+// requiring a module located in the address
+const date = require(__dirname + '/date.js'); //local, not installed using npm, so need __dirname
 
 const app = express();
 
-let items = ["Buy Food", "Cook Food", "Eat Food"];
-let workItems = [];
+const items = ["Buy Food", "Cook Food", "Eat Food"];
+const workItems = [];
 
 app.set('view engine', 'ejs'); //enable ejs in express
 app.use(bodyParser.urlencoded({extended: true}));
@@ -12,21 +14,18 @@ app.use(express.static("public")); //fetch files from file public
 
 // List for Today's To-do-List
 app.get("/", function(req, res) {
-  let today = new Date();
-
-  let options = {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long'
-  };
-
-  let day = today.toLocaleDateString("en-US", options);
-
+  const day = date.getDate(); // requireing from date.js module
   res.render("list", {listTitle: day, newListItems: items}); // searches views folder and finds list.ejs
 });
 
+// List for Work To-do-List
+app.get("/work", function(req, res) {
+  res.render("list", {listTitle: "Work List", newListItems: workItems});
+});
+
+// Posting from across the templates
 app.post("/", function(req, res){
-  let item = req.body.newItem;
+  const item = req.body.newItem;
   if (req.body.list === "Work") {
     workItems.push(item);
     res.redirect("/work");
@@ -36,15 +35,8 @@ app.post("/", function(req, res){
   }
 });
 
-// List for Work To-do-List
-app.get("/work", function(req, res) {
-  res.render("list", {listTitle: "Work List", newListItems: workItems});
-});
-
-app.post("/work", function(req, res){
-  let item = req.body.newItem;
-  workItems.push(item);
-  res.redirect("/work");
+app.get("/about", function(req, res) {
+  res.render("about");
 });
 
 
