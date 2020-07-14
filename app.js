@@ -1,6 +1,7 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
+const _ = require('lodash');
 // requiring a module located in the address
 const date = require(__dirname + '/date.js'); //local, not installed using npm, so need __dirname
 
@@ -47,88 +48,109 @@ const List = mongoose.model("List", listSchema);
 let address = ""
 
 // List for Today's To-do-List
-// app.get("/", function(req, res) {
-//   address = req.url;
-//
-//   const day = date.getDay();
-//
-//   Item.find({}, function(err, items) {
-//     if (items.length == 0) { // empty array, add the default items
-//       Item.insertMany(defaultItems, function(err) {
-//         if (err) {
-//           console.log(err);
-//         }
-//       });
-//       res.redirect("/");
-//     }
-//
-//     if (err) {
-//       console.log(err);
-//     } else {
-//       res.render("list", {
-//         listTitle: day,
-//         newListItems: items,
-//         theAddress: address
-//       }); // searches views folder and finds list.ejs
-//     }
-//   });
-// });
+app.get("/", function(req, res) {
+  address = req.url;
 
-app.post("/:todoList", function(req, res) {
-  if (todoList == null) {
-    console.log("HERHEHRHEREH!");
-  }
+  const day = date.getDate();
+
+  Item.find({}, function(err, items) {
+    if (items.length == 0) { // empty array, add the default items
+      Item.insertMany(defaultItems, function(err) {
+        if (err) {
+          console.log(err);
+        }
+      });
+      res.redirect("/");
+    }
+
+    if (err) {
+      console.log(err);
+    } else {
+      res.render("list", {
+        listTitle: day,
+        newListItems: items,
+        theAddress: address
+      }); // searches views folder and finds list.ejs
+    }
+  });
 });
 
 app.get("/:todoList", function(req, res) {
-  if (todoList == "") {
-    console.log("DHFADHFHDAHFASHDH!");
-  }
-  // const todoListName = req.params.todoList;
-  // List.findOne({name: todoListName}, function(err, existingList) {
-  //   if (err) {
-  //     console.log(err);
-  //   } else {
-  //     if (!existingList) { // if the object does not exist
-  //       const list = new List({
-  //         name: todoListName,
-  //         items: defaultItems
-  //       });
-  //       list.save();
-  //       res.redirect("/" + todoListName);
-  //     } else {
-  //       res.render("list", {listTitle: existingList.name, newListItems: existingList.items});
-  //     }
-  //   }
-  // });
+  address = req.url;
+
+  const todoListName = _.capitalize(req.params.todoList);
+  List.findOne({
+    name: todoListName
+  }, function(err, existingList) {
+    if (err) {
+      console.log(err);
+    } else {
+      if (!existingList) { // if the object does not exist
+        const list = new List({
+          name: todoListName,
+          items: defaultItems
+        });
+        list.save();
+        res.redirect("/" + todoListName);
+      } else {
+        res.render("list", {
+          listTitle: existingList.name,
+          newListItems: existingList.items,
+          theAddress: address
+        });
+      }
+    }
+  });
 });
 
-// app.post("/", function(req, res) {
-//   const itemName = req.body.newItem;
+app.post("/", function(req, res) {
+  const itemName = req.body.newItem;
+  const listURLName = req.body.listURL;
+
+  const item = new Item({ // making new document
+    name: itemName
+  });
+
+  if (listURLName == "/") {
+    item.save();
+  } else {
+    List.findOne({
+      name: listURLName.substring(1)
+    }, function(err, otherList) {
+      otherList.items.push(item);
+      otherList.save();
+    });
+  }
+  res.redirect(listURLName);
+});
+
+// app.post("/:todoList", function(req, res) {
 //
-//   const item = new Item({ // making new document
-//     name: itemName
-//   });
-//   item.save();
-//
-//   res.redirect("/");
-// });
+// }); 나중에 다시 만들자
 
 app.post("/delete", function(req, res) { //make deleting button instead
   const checkedItemId = req.body.deletingItem;
-  Item.findByIdAndRemove(checkedItemId, function(err) {
-    console.log(err);
-  });
-  res.redirect("/");
+  const listURLName = req.body.listURL;
+
+  if (listURLName === "/") {
+    Item.findByIdAndRemove(checkedItemId, function(err) {
+      console.log(err);
+    });
+    res.redirect("/");
+  } else {
+    List.findOneAndUpdate({
+      name: listURLName.substring(1)
+    }, {
+      $pull: {
+        items: {
+          _id: checkedItemId
+        }
+      }
+    }, function(err, otherList) {
+      res.redirect(listURLName);
+    });
+  }
 });
-
-
-
-// app.post("/work", function(req, res) {
-//   const item = req.body.newItem;
-//   workItems.push(item);
-//   res.redirect("/work");
-// });
 
 app.get("/about", function(req, res) {
   res.render("about");
