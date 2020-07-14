@@ -13,7 +13,8 @@ app.use(bodyParser.urlencoded({
 }));
 app.use(express.static("public")); //fetch files from file public
 
-mongoose.connect("mongodb://localhost:27017/todolistDB", {
+//mongodb://localhost:27017/todolistDB
+mongoose.connect("mongodb+srv://admin-jin:q9LG1ymsaUrWcoAl@clustertodolist.sbqc3.mongodb.net/todolistDB?retryWrites=true&w=majority/", {
   useNewUrlParser: true,
   useUnifiedTopology: true
 });
@@ -76,8 +77,6 @@ app.get("/", function(req, res) {
 });
 
 app.get("/:todoList", function(req, res) {
-  address = req.url;
-
   const todoListName = _.capitalize(req.params.todoList);
   List.findOne({
     name: todoListName
@@ -96,7 +95,7 @@ app.get("/:todoList", function(req, res) {
         res.render("list", {
           listTitle: existingList.name,
           newListItems: existingList.items,
-          theAddress: address
+          theAddress: "/" + todoListName
         });
       }
     }
@@ -113,15 +112,16 @@ app.post("/", function(req, res) {
 
   if (listURLName == "/") {
     item.save();
+    res.redirect(listURLName);
   } else {
     List.findOne({
       name: listURLName.substring(1)
     }, function(err, otherList) {
       otherList.items.push(item);
       otherList.save();
+      res.redirect(listURLName);
     });
   }
-  res.redirect(listURLName);
 });
 
 // app.post("/:todoList", function(req, res) {
